@@ -7,6 +7,7 @@ import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 const Suggestions = () => {
   const { toast } = useToast();
@@ -14,6 +15,7 @@ const Suggestions = () => {
   const [bottoms, setBottoms] = useState<ClothingItem[]>([]);
   const [suggestions, setSuggestions] = useState<OutfitSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   // Load saved items from localStorage on component mount
   useEffect(() => {
@@ -43,15 +45,14 @@ const Suggestions = () => {
     }
 
     if (parsedTops.length > 0 && parsedBottoms.length > 0) {
-      const outfitSuggestions = generateOutfitSuggestions(parsedTops, parsedBottoms);
-      setSuggestions(outfitSuggestions);
+      generateSuggestions(parsedTops, parsedBottoms);
+    } else {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
-  const regenerateSuggestions = () => {
-    if (tops.length === 0 || bottoms.length === 0) {
+  const generateSuggestions = async (topsItems = tops, bottomsItems = bottoms) => {
+    if (topsItems.length === 0 || bottomsItems.length === 0) {
       toast({
         title: "Not enough items",
         description: "You need at least one top and one bottom to generate suggestions",
@@ -60,13 +61,30 @@ const Suggestions = () => {
       return;
     }
 
-    const outfitSuggestions = generateOutfitSuggestions(tops, bottoms);
-    setSuggestions(outfitSuggestions);
+    setGenerating(true);
+    try {
+      const outfitSuggestions = await generateOutfitSuggestions(topsItems, bottomsItems);
+      setSuggestions(outfitSuggestions);
 
-    toast({
-      title: "Suggestions updated",
-      description: `Generated ${outfitSuggestions.length} outfit suggestions`,
-    });
+      toast({
+        title: "Suggestions updated",
+        description: `Generated ${outfitSuggestions.length} outfit suggestions using AI analysis`,
+      });
+    } catch (error) {
+      console.error("Failed to generate suggestions:", error);
+      toast({
+        title: "Error generating suggestions",
+        description: "There was a problem analyzing your outfits. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGenerating(false);
+      setLoading(false);
+    }
+  };
+
+  const regenerateSuggestions = () => {
+    generateSuggestions();
   };
 
   const findClothingItem = (id: string): ClothingItem | undefined => {
@@ -77,7 +95,10 @@ const Suggestions = () => {
     return (
       <Layout>
         <div className="container px-4 py-8 flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Loading suggestions...</p>
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading suggestions...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -108,10 +129,28 @@ const Suggestions = () => {
       <div className="container px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
           <h1 className="text-3xl font-semibold mb-4 sm:mb-0">Outfit Suggestions</h1>
-          <Button onClick={regenerateSuggestions}>Refresh Suggestions</Button>
+          <Button onClick={regenerateSuggestions} disabled={generating}>
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              "Refresh Suggestions"
+            )}
+          </Button>
         </div>
 
-        {suggestions.length > 0 ? (
+        {generating ? (
+          <div className="flex justify-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-muted-foreground">
+                Using AI to analyze your outfit combinations...
+              </p>
+            </div>
+          </div>
+        ) : suggestions.length > 0 ? (
           <div className="closet-grid">
             {suggestions.slice(0, 12).map((suggestion) => {
               const top = findClothingItem(suggestion.topId);
