@@ -109,7 +109,10 @@ export async function generateOutfitSuggestions(
 
 // Generate a fallback reason when Gemini is unavailable
 function generateFallbackReason(colorCompat: any, styleCompat: any, fabricCompat: any, score: number): string {
-  if (score > 0.7) {
+  // More detailed generated reasons based on the compatibility checks
+  if (score > 0.8) {
+    return "Perfect match! Colors, style and fabric work beautifully together.";
+  } else if (score > 0.7) {
     if (colorCompat.compatible && styleCompat.compatible) {
       return `${colorCompat.reason} ${styleCompat.reason}`;
     } else if (colorCompat.compatible) {
@@ -117,15 +120,20 @@ function generateFallbackReason(colorCompat: any, styleCompat: any, fabricCompat
     } else if (styleCompat.compatible) {
       return styleCompat.reason;
     }
+    return "Great match with complementary elements.";
   } else if (score > 0.5) {
     if (colorCompat.compatible) {
       return colorCompat.reason;
     } else if (styleCompat.compatible) {
       return styleCompat.reason;
-    } else {
+    } else if (fabricCompat.compatible) {
       return fabricCompat.reason;
     }
+    return "Good combination with interesting contrast.";
+  } else if (score > 0.3) {
+    return "Bold combination that makes a statement with contrasting elements.";
   }
+  
   return "Creates an interesting contrasting look.";
 }
 
