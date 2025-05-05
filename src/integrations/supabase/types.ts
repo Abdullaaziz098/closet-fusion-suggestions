@@ -9,7 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      clothing_items: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          fabric: string | null
+          id: string
+          image_url: string
+          is_favorite: boolean | null
+          last_worn: string | null
+          name: string | null
+          style: string | null
+          tags: string[] | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          fabric?: string | null
+          id?: string
+          image_url: string
+          is_favorite?: boolean | null
+          last_worn?: string | null
+          name?: string | null
+          style?: string | null
+          tags?: string[] | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          fabric?: string | null
+          id?: string
+          image_url?: string
+          is_favorite?: boolean | null
+          last_worn?: string | null
+          name?: string | null
+          style?: string | null
+          tags?: string[] | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      outfit_suggestions: {
+        Row: {
+          bottom_id: string | null
+          created_at: string | null
+          id: string
+          match_reason: string | null
+          saved: boolean | null
+          score: number
+          top_id: string | null
+        }
+        Insert: {
+          bottom_id?: string | null
+          created_at?: string | null
+          id?: string
+          match_reason?: string | null
+          saved?: boolean | null
+          score: number
+          top_id?: string | null
+        }
+        Update: {
+          bottom_id?: string | null
+          created_at?: string | null
+          id?: string
+          match_reason?: string | null
+          saved?: boolean | null
+          score?: number
+          top_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_suggestions_bottom_id_fkey"
+            columns: ["bottom_id"]
+            isOneToOne: false
+            referencedRelation: "clothing_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outfit_suggestions_top_id_fkey"
+            columns: ["top_id"]
+            isOneToOne: false
+            referencedRelation: "clothing_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

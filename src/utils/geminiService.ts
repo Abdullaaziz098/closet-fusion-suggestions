@@ -49,6 +49,7 @@ export async function analyzeOutfitWithGemini(
   bottom: ClothingItem
 ): Promise<{ matchScore: number; matchReason: string }> {
   try {
+    console.log("Analyzing outfit with Gemini...");
     const topBase64 = await imageUrlToBase64(top.imageUrl);
     const bottomBase64 = await imageUrlToBase64(bottom.imageUrl);
 
@@ -57,7 +58,7 @@ export async function analyzeOutfitWithGemini(
         {
           parts: [
             {
-              text: "Analyze these two clothing items (a top and a bottom) and evaluate how well they match together. Consider color coordination, style compatibility, and fashion sense. Provide a match score from 0 to 1 (where 1 is perfect match) and a brief explanation of why they do or don't match well. Format your response as JSON with two fields: 'score' (number between 0 and 1) and 'reason' (string explanation)."
+              text: "Analyze these two clothing items (a top and a bottom) and evaluate how well they match together. Consider color coordination, style compatibility, and fashion sense. Provide a match score from 0 to 1 (where 1 is perfect match) and a brief explanation of why they do or don't match well. Format your response as JSON with two fields: 'score' (number between 0 and 1) and 'reason' (string explanation, keep it concise under 150 characters)."
             },
             {
               inline_data: {
@@ -80,6 +81,7 @@ export async function analyzeOutfitWithGemini(
       }
     };
 
+    console.log("Sending request to Gemini API...");
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
@@ -90,6 +92,7 @@ export async function analyzeOutfitWithGemini(
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`Gemini API error: ${response.status} - ${errorText}`);
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
@@ -97,23 +100,46 @@ export async function analyzeOutfitWithGemini(
     const responseText = data.candidates[0]?.content.parts[0].text;
     
     if (!responseText) {
+      console.error("Invalid response from Gemini API: Empty response");
       throw new Error("Invalid response from Gemini API");
     }
+
+    console.log("Gemini response:", responseText);
 
     // Extract JSON from the response text
     // The response might have markdown formatting, so we need to extract just the JSON part
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error("Could not extract JSON from Gemini response");
       return { matchScore: 0.5, matchReason: "Could not analyze outfit compatibility" };
     }
 
-    const result = JSON.parse(jsonMatch[0]);
-    return { 
-      matchScore: result.score || 0.5, 
-      matchReason: result.reason || "No analysis provided" 
-    };
+    try {
+      const result = JSON.parse(jsonMatch[0]);
+      return { 
+        matchScore: parseFloat(result.score) || 0.5, 
+        matchReason: result.reason || "No analysis provided" 
+      };
+    } catch (jsonError) {
+      console.error("Error parsing Gemini JSON response:", jsonError);
+      return { matchScore: 0.5, matchReason: "Error parsing outfit analysis" };
+    }
   } catch (error) {
     console.error("Error analyzing outfit with Gemini:", error);
     return { matchScore: 0.5, matchReason: "Error analyzing outfit compatibility" };
+  }
+}
+
+// Test function to validate Gemini API is working
+export async function testGeminiConnection(): Promise<boolean> {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+    if (!response.ok) {
+      throw new Error(`API test failed with status ${response.status}`);
+    }
+    return true;
+  } catch (error) {
+    console.error("Gemini API connection test failed:", error);
+    return false;
   }
 }
