@@ -5,7 +5,7 @@ import OutfitCard from "@/components/OutfitCard";
 import { Button } from "@/components/ui/button";
 import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Loader2, Wand2, Filter, SlidersHorizontal } from "lucide-react";
 import { fetchClothingItems } from "@/services/clothingService";
@@ -40,7 +40,7 @@ const Suggestions = () => {
         toast({
           title: "Gemini API Status",
           description: "Using fallback outfit matching. AI-powered analysis may be limited.",
-          variant: "warning",
+          variant: "default", // Changed from "warning" to "default"
         });
       }
     };
@@ -325,3 +325,4 @@ const Suggestions = () => {
 };
 
 export default Suggestions;
+
