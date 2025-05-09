@@ -52,8 +52,8 @@ export async function analyzeOutfitWithGemini(
   try {
     console.log("Analyzing outfit with Gemini...");
     
-    // Check if the API key is valid
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
+    // Check if the API key is valid - fixed comparison to check for empty string
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "") {
       console.warn("Missing valid Gemini API key. Using fallback analysis.");
       return generateStyleBasedAnalysis(top, bottom);
     }
