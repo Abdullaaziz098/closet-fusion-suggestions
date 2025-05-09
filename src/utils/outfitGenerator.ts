@@ -12,6 +12,7 @@ export async function generateOutfitSuggestions(
   bottoms: ClothingItem[]
 ): Promise<OutfitSuggestion[]> {
   const suggestions: OutfitSuggestion[] = [];
+  const suggestedPairs = new Set(); // Track pairs to avoid duplicates
 
   if (!tops.length || !bottoms.length) {
     return suggestions;
@@ -35,6 +36,16 @@ export async function generateOutfitSuggestions(
     
     for (const bottom of bottomsToProcess) {
       if (processedCombinations >= maxCombinations) break;
+      
+      // Create a unique key for this pair to prevent duplicates
+      const pairKey = `${top.id}-${bottom.id}`;
+      
+      // Skip if we've already created a suggestion for this pair
+      if (suggestedPairs.has(pairKey)) {
+        continue;
+      }
+      
+      suggestedPairs.add(pairKey);
       processedCombinations++;
       
       try {
