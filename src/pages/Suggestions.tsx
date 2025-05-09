@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import OutfitCard from "@/components/OutfitCard";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { Loader2, Wand2, Filter, SlidersHorizontal, Image, WandSparkles } from "lucide-react";
+import { Loader2, Wand2, Filter, SlidersHorizontal, Image, WandSparkles, Calendar } from "lucide-react";
 import { fetchClothingItems } from "@/services/clothingService";
 import { testGeminiConnection } from "@/utils/geminiService";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import WeeklyOutfitSuggestion from "@/components/WeeklyOutfitSuggestion";
 
 const Suggestions = () => {
   const { toast } = useToast();
@@ -34,6 +34,49 @@ const Suggestions = () => {
   const [geminiStatus, setGeminiStatus] = useState<boolean | null>(null);
   const [minMatchScore, setMinMatchScore] = useState(0); // Default no filter
   const [backgroundsRemoved, setBackgroundsRemoved] = useState(false);
+  const [weeklyOutfitVisible, setWeeklyOutfitVisible] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Removing backgrounds from your clothing...");
+
+  // Loading messages for background removal
+  const backgroundRemovalMessages = [
+    "Removing backgrounds from your clothing...",
+    "Applying advanced image processing...",
+    "Extracting clothing items from backgrounds...",
+    "Preparing your virtual wardrobe...",
+    "Creating transparent backgrounds for better matching...",
+  ];
+  
+  // Loading messages for outfit generation
+  const outfitGenerationMessages = [
+    "Analyzing your outfit combinations...",
+    "Matching colors and styles...",
+    "Applying fashion expertise to your wardrobe...",
+    "Finding the perfect outfit pairings...",
+    "Creating personalized style recommendations...",
+  ];
+
+  // Message rotation effect
+  useEffect(() => {
+    let interval: number | undefined;
+    
+    if (processing) {
+      let index = 0;
+      interval = window.setInterval(() => {
+        setLoadingMessage(backgroundRemovalMessages[index % backgroundRemovalMessages.length]);
+        index++;
+      }, 3000);
+    } else if (generating) {
+      let index = 0;
+      interval = window.setInterval(() => {
+        setLoadingMessage(outfitGenerationMessages[index % outfitGenerationMessages.length]);
+        index++;
+      }, 3000);
+    }
+    
+    return () => {
+      if (interval) window.clearInterval(interval);
+    };
+  }, [processing, generating]);
 
   // Check Gemini API connection
   useEffect(() => {
@@ -201,6 +244,19 @@ const Suggestions = () => {
     return [...tops, ...bottoms].find((item) => item.id === id);
   };
 
+  const generateWeeklyOutfits = useCallback(() => {
+    if (suggestions.length === 0) {
+      toast({
+        title: "No suggestions available",
+        description: "Please generate outfit suggestions first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setWeeklyOutfitVisible(true);
+  }, [suggestions.length, toast]);
+
   // Filter suggestions based on the minimum match score
   const filteredSuggestions = suggestions.filter(
     suggestion => suggestion.score * 100 >= minMatchScore
@@ -297,6 +353,16 @@ const Suggestions = () => {
                 </>
               )}
             </Button>
+            
+            {suggestions.length > 0 && (
+              <Button 
+                onClick={generateWeeklyOutfits}
+                variant="outline"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Weekly Planner
+              </Button>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -382,12 +448,12 @@ const Suggestions = () => {
           </div>
         )}
 
-        {processing && (
+        {(processing || generating) && (
           <div className="flex justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <div className="text-center">
-                <p className="font-medium">Removing backgrounds from your clothing...</p>
+                <p className="font-medium">{loadingMessage}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   This may take a few moments
                 </p>
@@ -396,21 +462,15 @@ const Suggestions = () => {
           </div>
         )}
 
-        {generating && (
-          <div className="flex justify-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <div className="text-center">
-                <p className="font-medium">Analyzing your outfit combinations...</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Using AI to find the best matches for your style
-                </p>
-              </div>
-            </div>
-          </div>
+        {weeklyOutfitVisible && suggestions.length > 0 && (
+          <WeeklyOutfitSuggestion 
+            suggestions={suggestions} 
+            findClothingItem={findClothingItem}
+            onClose={() => setWeeklyOutfitVisible(false)}
+          />
         )}
 
-        {!processing && !generating && filteredSuggestions.length > 0 && (
+        {!processing && !generating && !weeklyOutfitVisible && filteredSuggestions.length > 0 && (
           <>
             {minMatchScore > 0 && (
               <div className="mb-4 flex items-center">
@@ -448,7 +508,7 @@ const Suggestions = () => {
           </>
         )}
 
-        {!processing && !generating && suggestions.length > 0 && filteredSuggestions.length === 0 && (
+        {!processing && !generating && suggestions.length > 0 && filteredSuggestions.length === 0 && !weeklyOutfitVisible && (
           <div className="text-center py-12 border rounded-lg">
             <p className="text-lg font-medium mb-2">No matching outfits</p>
             <p className="text-muted-foreground mb-4">
