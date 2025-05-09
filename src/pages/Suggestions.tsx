@@ -6,7 +6,7 @@ import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { Loader2, Wand2, Filter, SlidersHorizontal, Image, WandSparkles, Calendar } from "lucide-react";
+import { Loader2, Wand2, Filter, SlidersHorizontal, Image, WandSparkles, Calendar, Trophy, Medal, Award } from "lucide-react";
 import { fetchClothingItems } from "@/services/clothingService";
 import { testGeminiConnection } from "@/utils/geminiService";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import WeeklyOutfitSuggestion from "@/components/WeeklyOutfitSuggestion";
+import TopOutfitsPodium from "@/components/TopOutfitsPodium";
 
 const Suggestions = () => {
   const { toast } = useToast();
@@ -214,7 +215,10 @@ const Suggestions = () => {
     try {
       console.log("Generating outfit suggestions with Gemini status:", geminiStatus);
       const outfitSuggestions = await generateOutfitSuggestions(processedTops, processedBottoms);
-      setSuggestions(outfitSuggestions);
+      
+      // Sort suggestions by score before setting them
+      const sortedSuggestions = [...outfitSuggestions].sort((a, b) => b.score - a.score);
+      setSuggestions(sortedSuggestions);
 
       toast({
         title: "Suggestions updated",
@@ -261,6 +265,10 @@ const Suggestions = () => {
   const filteredSuggestions = suggestions.filter(
     suggestion => suggestion.score * 100 >= minMatchScore
   );
+
+  // Split the filtered suggestions into top 3 and the rest
+  const topThreeSuggestions = filteredSuggestions.slice(0, 3);
+  const otherSuggestions = filteredSuggestions.slice(3);
 
   if (loading) {
     return (
@@ -488,23 +496,44 @@ const Suggestions = () => {
               </div>
             )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredSuggestions.map((suggestion) => {
-                const top = findClothingItem(suggestion.topId);
-                const bottom = findClothingItem(suggestion.bottomId);
+            {/* Top 3 Podium View */}
+            {topThreeSuggestions.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <Trophy className="text-amber-500 h-5 w-5 mr-2" />
+                  <h2 className="text-xl font-bold">Top Outfit Matches</h2>
+                </div>
+                
+                <TopOutfitsPodium 
+                  suggestions={topThreeSuggestions} 
+                  findClothingItem={findClothingItem} 
+                />
+              </div>
+            )}
+            
+            {/* Other suggestions grid */}
+            {otherSuggestions.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold mb-4">Other Great Combinations</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {otherSuggestions.map((suggestion) => {
+                    const top = findClothingItem(suggestion.topId);
+                    const bottom = findClothingItem(suggestion.bottomId);
 
-                if (!top || !bottom) return null;
+                    if (!top || !bottom) return null;
 
-                return (
-                  <OutfitCard
-                    key={suggestion.id}
-                    suggestion={suggestion}
-                    top={top}
-                    bottom={bottom}
-                  />
-                );
-              })}
-            </div>
+                    return (
+                      <OutfitCard
+                        key={suggestion.id}
+                        suggestion={suggestion}
+                        top={top}
+                        bottom={bottom}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 
