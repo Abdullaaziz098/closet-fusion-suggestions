@@ -36,8 +36,9 @@ export async function removeBackground(imageUrl: string): Promise<string> {
       return imageUrl;
     }
 
-    const data = await response.json();
-    return `data:image/png;base64,${data.data.result_b64}`;
+    // Parse as blob first, then convert to base64
+    const blob = await response.blob();
+    return convertBlobToBase64(blob);
   } catch (error) {
     console.error("Error removing background:", error);
     // Return the original image if there's an error
@@ -62,8 +63,23 @@ async function fetchAndConvertToBase64(url: string): Promise<string> {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error converting image to base64:", error);
     throw error;
   }
+}
+
+/**
+ * Converts a Blob to a base64 data URL string
+ */
+function convertBlobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }

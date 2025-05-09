@@ -7,10 +7,11 @@ import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { Loader2, Wand2, Filter, SlidersHorizontal } from "lucide-react";
+import { Loader2, Wand2, Filter, SlidersHorizontal, Image, WandSparkles } from "lucide-react";
 import { fetchClothingItems } from "@/services/clothingService";
 import { testGeminiConnection } from "@/utils/geminiService";
 import { Badge } from "@/components/ui/badge";
+import { removeBackground } from "@/utils/backgroundRemoval";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,11 +25,15 @@ const Suggestions = () => {
   const { toast } = useToast();
   const [tops, setTops] = useState<ClothingItem[]>([]);
   const [bottoms, setBottoms] = useState<ClothingItem[]>([]);
+  const [processedTops, setProcessedTops] = useState<ClothingItem[]>([]);
+  const [processedBottoms, setProcessedBottoms] = useState<ClothingItem[]>([]);
   const [suggestions, setSuggestions] = useState<OutfitSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<boolean | null>(null);
   const [minMatchScore, setMinMatchScore] = useState(0); // Default no filter
+  const [backgroundsRemoved, setBackgroundsRemoved] = useState(false);
 
   // Check Gemini API connection
   useEffect(() => {
@@ -40,7 +45,7 @@ const Suggestions = () => {
         toast({
           title: "Gemini API Status",
           description: "Using fallback outfit matching. AI-powered analysis may be limited.",
-          variant: "default", // Changed from "warning" to "default"
+          variant: "default",
         });
       }
     };
@@ -59,9 +64,9 @@ const Suggestions = () => {
         setTops(fetchedTops);
         setBottoms(fetchedBottoms);
         
-        if (fetchedTops.length > 0 && fetchedBottoms.length > 0) {
-          await generateSuggestions(fetchedTops, fetchedBottoms);
-        }
+        // No longer automatically generating suggestions
+        setProcessedTops(fetchedTops.map(top => ({ ...top })));
+        setProcessedBottoms(fetchedBottoms.map(bottom => ({ ...bottom })));
       } catch (error) {
         console.error("Failed to load clothing items:", error);
         
@@ -76,6 +81,7 @@ const Suggestions = () => {
           try {
             parsedTops = JSON.parse(savedTops);
             setTops(parsedTops);
+            setProcessedTops(parsedTops.map(top => ({ ...top })));
           } catch (error) {
             console.error("Failed to parse saved tops", error);
           }
@@ -85,13 +91,10 @@ const Suggestions = () => {
           try {
             parsedBottoms = JSON.parse(savedBottoms);
             setBottoms(parsedBottoms);
+            setProcessedBottoms(parsedBottoms.map(bottom => ({ ...bottom })));
           } catch (error) {
             console.error("Failed to parse saved bottoms", error);
           }
-        }
-
-        if (parsedTops.length > 0 && parsedBottoms.length > 0) {
-          generateSuggestions(parsedTops, parsedBottoms);
         }
       } finally {
         setLoading(false);
@@ -101,8 +104,61 @@ const Suggestions = () => {
     loadItems();
   }, []);
 
-  const generateSuggestions = async (topsItems = tops, bottomsItems = bottoms) => {
-    if (topsItems.length === 0 || bottomsItems.length === 0) {
+  const processBackgrounds = async () => {
+    if (tops.length === 0 || bottoms.length === 0) {
+      toast({
+        title: "Not enough items",
+        description: "You need at least one top and one bottom to process images",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      toast({
+        title: "Processing images",
+        description: "Removing backgrounds from your clothing items...",
+      });
+
+      // Process tops
+      const newProcessedTops = await Promise.all(
+        tops.map(async (top) => {
+          const processedImageUrl = await removeBackground(top.imageUrl);
+          return { ...top, imageUrl: processedImageUrl };
+        })
+      );
+
+      // Process bottoms
+      const newProcessedBottoms = await Promise.all(
+        bottoms.map(async (bottom) => {
+          const processedImageUrl = await removeBackground(bottom.imageUrl);
+          return { ...bottom, imageUrl: processedImageUrl };
+        })
+      );
+
+      setProcessedTops(newProcessedTops);
+      setProcessedBottoms(newProcessedBottoms);
+      setBackgroundsRemoved(true);
+
+      toast({
+        title: "Images processed",
+        description: "Backgrounds removed successfully. Ready for outfit analysis.",
+      });
+    } catch (error) {
+      console.error("Failed to process backgrounds:", error);
+      toast({
+        title: "Error processing images",
+        description: "There was a problem removing backgrounds. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const generateSuggestions = async () => {
+    if (processedTops.length === 0 || processedBottoms.length === 0) {
       toast({
         title: "Not enough items",
         description: "You need at least one top and one bottom to generate suggestions",
@@ -114,7 +170,7 @@ const Suggestions = () => {
     setGenerating(true);
     try {
       console.log("Generating outfit suggestions with Gemini status:", geminiStatus);
-      const outfitSuggestions = await generateOutfitSuggestions(topsItems, bottomsItems);
+      const outfitSuggestions = await generateOutfitSuggestions(processedTops, processedBottoms);
       setSuggestions(outfitSuggestions);
 
       toast({
@@ -133,11 +189,15 @@ const Suggestions = () => {
     }
   };
 
-  const regenerateSuggestions = () => {
-    generateSuggestions();
-  };
-
   const findClothingItem = (id: string): ClothingItem | undefined => {
+    // First look in processed items
+    const processedItem = [...processedTops, ...processedBottoms].find(
+      (item) => item.id === id
+    );
+    
+    if (processedItem) return processedItem;
+    
+    // Fall back to original items if not found
     return [...tops, ...bottoms].find((item) => item.id === id);
   };
 
@@ -197,7 +257,47 @@ const Suggestions = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            <Button 
+              onClick={processBackgrounds} 
+              disabled={processing || backgroundsRemoved}
+              variant={backgroundsRemoved ? "outline" : "secondary"}
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : backgroundsRemoved ? (
+                <>
+                  <Image className="mr-2 h-4 w-4" />
+                  Backgrounds Removed
+                </>
+              ) : (
+                <>
+                  <Image className="mr-2 h-4 w-4" />
+                  Remove Backgrounds
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={generateSuggestions} 
+              disabled={generating || (!backgroundsRemoved && tops.length > 0 && bottoms.length > 0)}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <WandSparkles className="mr-2 h-4 w-4" />
+                  Generate Suggestions
+                </>
+              )}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -234,24 +334,69 @@ const Suggestions = () => {
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button onClick={regenerateSuggestions} disabled={generating}>
-              {generating ? (
+          </div>
+        </div>
+
+        {!backgroundsRemoved && (
+          <div className="mb-8 p-6 border rounded-lg bg-muted/10">
+            <h2 className="text-xl font-semibold mb-2">Ready to create outfit suggestions?</h2>
+            <p className="mb-4 text-muted-foreground">
+              First, remove the backgrounds from your clothing items to create cleaner outfit visualizations.
+              Then generate AI-powered outfit suggestions based on style and color matching.
+            </p>
+            <Button onClick={processBackgrounds} disabled={processing}>
+              {processing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
+                  Processing Images...
                 </>
               ) : (
                 <>
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  Generate New
+                  <Image className="mr-2 h-4 w-4" />
+                  Step 1: Remove Backgrounds
                 </>
               )}
             </Button>
           </div>
-        </div>
+        )}
 
-        {generating ? (
+        {backgroundsRemoved && suggestions.length === 0 && (
+          <div className="mb-8 p-6 border rounded-lg bg-muted/10">
+            <h2 className="text-xl font-semibold mb-2">Backgrounds removed successfully!</h2>
+            <p className="mb-4 text-muted-foreground">
+              Your clothing items now have transparent backgrounds. Ready to generate AI outfit suggestions?
+            </p>
+            <Button onClick={generateSuggestions} disabled={generating}>
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Outfits...
+                </>
+              ) : (
+                <>
+                  <WandSparkles className="mr-2 h-4 w-4" />
+                  Step 2: Generate Suggestions
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {processing && (
+          <div className="flex justify-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="text-center">
+                <p className="font-medium">Removing backgrounds from your clothing...</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  This may take a few moments
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {generating && (
           <div className="flex justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -263,7 +408,9 @@ const Suggestions = () => {
               </div>
             </div>
           </div>
-        ) : filteredSuggestions.length > 0 ? (
+        )}
+
+        {!processing && !generating && filteredSuggestions.length > 0 && (
           <>
             {minMatchScore > 0 && (
               <div className="mb-4 flex items-center">
@@ -299,7 +446,9 @@ const Suggestions = () => {
               })}
             </div>
           </>
-        ) : suggestions.length > 0 ? (
+        )}
+
+        {!processing && !generating && suggestions.length > 0 && filteredSuggestions.length === 0 && (
           <div className="text-center py-12 border rounded-lg">
             <p className="text-lg font-medium mb-2">No matching outfits</p>
             <p className="text-muted-foreground mb-4">
@@ -311,12 +460,6 @@ const Suggestions = () => {
             >
               Clear filter
             </Button>
-          </div>
-        ) : (
-          <div className="text-center py-12 border rounded-lg">
-            <p className="text-muted-foreground">
-              No suggestions available. Try refreshing suggestions.
-            </p>
           </div>
         )}
       </div>
