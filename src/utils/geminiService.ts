@@ -1,6 +1,7 @@
 
 // Gemini API integration for clothing analysis
 import { OutfitSuggestion, ClothingItem } from "@/types/clothing";
+import { removeBackground } from "./backgroundRemoval";
 
 // API key for Gemini 
 const GEMINI_API_KEY = "AIzaSyDJ8UwKPZIQTtlch770SUxTm3AsIB8WSow";
@@ -52,14 +53,18 @@ export async function analyzeOutfitWithGemini(
   try {
     console.log("Analyzing outfit with Gemini...");
     
-    // Check if the API key is valid - fixed comparison to check for empty string
+    // Check if the API key is valid - fixed check for empty string
     if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "") {
       console.warn("Missing valid Gemini API key. Using fallback analysis.");
       return generateStyleBasedAnalysis(top, bottom);
     }
     
-    const topBase64 = await imageUrlToBase64(top.imageUrl);
-    const bottomBase64 = await imageUrlToBase64(bottom.imageUrl);
+    // Remove backgrounds from both images before analysis
+    const processedTopImage = await removeBackground(top.imageUrl);
+    const processedBottomImage = await removeBackground(bottom.imageUrl);
+    
+    const topBase64 = await imageUrlToBase64(processedTopImage);
+    const bottomBase64 = await imageUrlToBase64(processedBottomImage);
 
     const payload = {
       contents: [
