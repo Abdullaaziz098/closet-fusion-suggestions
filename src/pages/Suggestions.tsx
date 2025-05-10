@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import OutfitCard from "@/components/OutfitCard";
+import TopOutfitsPodium from "@/components/TopOutfitsPodium";
 import { Button } from "@/components/ui/button";
 import { ClothingItem, OutfitSuggestion } from "@/types/clothing";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
@@ -19,6 +21,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion, AnimatePresence } from "framer-motion";
 import WeeklyOutfitSuggestion from "@/components/WeeklyOutfitSuggestion";
 
 const Suggestions = () => {
@@ -36,6 +39,7 @@ const Suggestions = () => {
   const [backgroundsRemoved, setBackgroundsRemoved] = useState(false);
   const [weeklyOutfitVisible, setWeeklyOutfitVisible] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Removing backgrounds from your clothing...");
+  const [showPodium, setShowPodium] = useState(true);
 
   // Loading messages for background removal
   const backgroundRemovalMessages = [
@@ -261,15 +265,26 @@ const Suggestions = () => {
   const filteredSuggestions = suggestions.filter(
     suggestion => suggestion.score * 100 >= minMatchScore
   );
+  
+  // Get suggestions excluding top 3 for regular display
+  const regularSuggestions = showPodium && filteredSuggestions.length > 3
+    ? [...filteredSuggestions]
+        .sort((a, b) => b.score - a.score)
+        .slice(3)
+    : filteredSuggestions;
 
   if (loading) {
     return (
       <Layout>
         <div className="container px-4 py-8 flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-2">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-2"
+          >
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Loading suggestions...</p>
-          </div>
+          </motion.div>
         </div>
       </Layout>
     );
@@ -279,7 +294,12 @@ const Suggestions = () => {
     return (
       <Layout>
         <div className="container px-4 py-8 max-w-3xl mx-auto">
-          <div className="text-center py-12 bg-muted/20 rounded-lg border">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="text-center py-12 bg-muted/20 rounded-lg border"
+          >
             <h2 className="text-2xl font-semibold mb-4">
               Not enough items in your closet
             </h2>
@@ -289,7 +309,7 @@ const Suggestions = () => {
             <Button asChild>
               <Link to="/closet">Add Items to Your Closet</Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
       </Layout>
     );
@@ -297,7 +317,12 @@ const Suggestions = () => {
 
   return (
     <Layout>
-      <div className="container px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="container px-4 py-8"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-1">Outfit Suggestions</h1>
@@ -318,6 +343,7 @@ const Suggestions = () => {
               onClick={processBackgrounds} 
               disabled={processing || backgroundsRemoved}
               variant={backgroundsRemoved ? "outline" : "secondary"}
+              className="hover-lift"
             >
               {processing ? (
                 <>
@@ -340,6 +366,7 @@ const Suggestions = () => {
             <Button 
               onClick={generateSuggestions} 
               disabled={generating || (!backgroundsRemoved && tops.length > 0 && bottoms.length > 0)}
+              className="hover-lift"
             >
               {generating ? (
                 <>
@@ -358,6 +385,7 @@ const Suggestions = () => {
               <Button 
                 onClick={generateWeeklyOutfits}
                 variant="outline"
+                className="hover-lift"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Weekly Planner
@@ -366,7 +394,7 @@ const Suggestions = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="hover-lift">
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filter
                 </Button>
@@ -403,126 +431,249 @@ const Suggestions = () => {
           </div>
         </div>
 
-        {!backgroundsRemoved && (
-          <div className="mb-8 p-6 border rounded-lg bg-muted/10">
-            <h2 className="text-xl font-semibold mb-2">Ready to create outfit suggestions?</h2>
-            <p className="mb-4 text-muted-foreground">
-              First, remove the backgrounds from your clothing items to create cleaner outfit visualizations.
-              Then generate AI-powered outfit suggestions based on style and color matching.
-            </p>
-            <Button onClick={processBackgrounds} disabled={processing}>
-              {processing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Images...
-                </>
-              ) : (
-                <>
-                  <Image className="mr-2 h-4 w-4" />
-                  Step 1: Remove Backgrounds
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {backgroundsRemoved && suggestions.length === 0 && (
-          <div className="mb-8 p-6 border rounded-lg bg-muted/10">
-            <h2 className="text-xl font-semibold mb-2">Backgrounds removed successfully!</h2>
-            <p className="mb-4 text-muted-foreground">
-              Your clothing items now have transparent backgrounds. Ready to generate AI outfit suggestions?
-            </p>
-            <Button onClick={generateSuggestions} disabled={generating}>
-              {generating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing Outfits...
-                </>
-              ) : (
-                <>
-                  <WandSparkles className="mr-2 h-4 w-4" />
-                  Step 2: Generate Suggestions
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {(processing || generating) && (
-          <div className="flex justify-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <div className="text-center">
-                <p className="font-medium">{loadingMessage}</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  This may take a few moments
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {weeklyOutfitVisible && suggestions.length > 0 && (
-          <WeeklyOutfitSuggestion 
-            suggestions={suggestions} 
-            findClothingItem={findClothingItem}
-            onClose={() => setWeeklyOutfitVisible(false)}
-          />
-        )}
-
-        {!processing && !generating && !weeklyOutfitVisible && filteredSuggestions.length > 0 && (
-          <>
-            {minMatchScore > 0 && (
-              <div className="mb-4 flex items-center">
-                <Badge variant="outline" className="mr-2">
-                  Filtered: {minMatchScore}%+ match
-                </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setMinMatchScore(0)}
-                  className="h-7 text-xs"
-                >
-                  Clear filter
-                </Button>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredSuggestions.map((suggestion) => {
-                const top = findClothingItem(suggestion.topId);
-                const bottom = findClothingItem(suggestion.bottomId);
-
-                if (!top || !bottom) return null;
-
-                return (
-                  <OutfitCard
-                    key={suggestion.id}
-                    suggestion={suggestion}
-                    top={top}
-                    bottom={bottom}
-                  />
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {!processing && !generating && suggestions.length > 0 && filteredSuggestions.length === 0 && !weeklyOutfitVisible && (
-          <div className="text-center py-12 border rounded-lg">
-            <p className="text-lg font-medium mb-2">No matching outfits</p>
-            <p className="text-muted-foreground mb-4">
-              No outfits meet your current filter criteria of {minMatchScore}%+ match quality.
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => setMinMatchScore(0)}
+        <AnimatePresence>
+          {!backgroundsRemoved && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+              className="mb-8 p-6 border rounded-lg bg-gradient-to-r from-muted/10 to-background"
             >
-              Clear filter
-            </Button>
-          </div>
-        )}
-      </div>
+              <motion.h2 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl font-semibold mb-2"
+              >
+                Ready to create outfit suggestions?
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mb-4 text-muted-foreground"
+              >
+                First, remove the backgrounds from your clothing items to create cleaner outfit visualizations.
+                Then generate AI-powered outfit suggestions based on style and color matching.
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Button onClick={processBackgrounds} disabled={processing} className="hover-lift">
+                  {processing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing Images...
+                    </>
+                  ) : (
+                    <>
+                      <Image className="mr-2 h-4 w-4" />
+                      Step 1: Remove Backgrounds
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {backgroundsRemoved && suggestions.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+              className="mb-8 p-6 border rounded-lg bg-gradient-to-r from-muted/10 to-background"
+            >
+              <motion.h2 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl font-semibold mb-2"
+              >
+                Backgrounds removed successfully!
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mb-4 text-muted-foreground"
+              >
+                Your clothing items now have transparent backgrounds. Ready to generate AI outfit suggestions?
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Button onClick={generateSuggestions} disabled={generating} className="hover-lift">
+                  {generating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing Outfits...
+                    </>
+                  ) : (
+                    <>
+                      <WandSparkles className="mr-2 h-4 w-4" />
+                      Step 2: Generate Suggestions
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {(processing || generating) && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-center py-12"
+            >
+              <div className="flex flex-col items-center gap-4 max-w-md p-8 rounded-xl bg-gradient-to-b from-background to-muted/20 shadow-sm">
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 360],
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  className="relative"
+                >
+                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+                  <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                </motion.div>
+                
+                <div className="text-center">
+                  <motion.p 
+                    key={loadingMessage}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="font-medium text-lg"
+                  >
+                    {loadingMessage}
+                  </motion.p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This may take a few moments
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {weeklyOutfitVisible && suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+            >
+              <WeeklyOutfitSuggestion 
+                suggestions={suggestions} 
+                findClothingItem={findClothingItem}
+                onClose={() => setWeeklyOutfitVisible(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {!processing && !generating && !weeklyOutfitVisible && filteredSuggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-8"
+            >
+              {minMatchScore > 0 && (
+                <div className="mb-4 flex items-center">
+                  <Badge variant="outline" className="mr-2">
+                    Filtered: {minMatchScore}%+ match
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setMinMatchScore(0)}
+                    className="h-7 text-xs"
+                  >
+                    Clear filter
+                  </Button>
+                </div>
+              )}
+              
+              {/* Top Outfits Podium for top 3 suggestions */}
+              {showPodium && filteredSuggestions.length >= 3 && (
+                <TopOutfitsPodium 
+                  suggestions={filteredSuggestions}
+                  findClothingItem={findClothingItem}
+                />
+              )}
+              
+              {/* Regular grid display for the rest or all if no podium */}
+              {regularSuggestions.length > 0 && (
+                <div>
+                  {showPodium && filteredSuggestions.length > 3 && (
+                    <h3 className="text-xl font-medium mb-4">Other Suggestions</h3>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {regularSuggestions.map((suggestion, index) => {
+                      const top = findClothingItem(suggestion.topId);
+                      const bottom = findClothingItem(suggestion.bottomId);
+
+                      if (!top || !bottom) return null;
+
+                      return (
+                        <OutfitCard
+                          key={suggestion.id}
+                          suggestion={suggestion}
+                          top={top}
+                          bottom={bottom}
+                          index={index}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {!processing && !generating && suggestions.length > 0 && filteredSuggestions.length === 0 && !weeklyOutfitVisible && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center py-12 border rounded-lg"
+            >
+              <p className="text-lg font-medium mb-2">No matching outfits</p>
+              <p className="text-muted-foreground mb-4">
+                No outfits meet your current filter criteria of {minMatchScore}%+ match quality.
+              </p>
+              <Button 
+                variant="outline"
+                onClick={() => setMinMatchScore(0)}
+              >
+                Clear filter
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </Layout>
   );
 };
