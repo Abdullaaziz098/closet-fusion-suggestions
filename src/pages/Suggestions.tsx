@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import OutfitCard from "@/components/OutfitCard";
@@ -641,7 +640,6 @@ const Suggestions = () => {
                           suggestion={suggestion}
                           top={top}
                           bottom={bottom}
-                          index={index}
                         />
                       );
                     })}
