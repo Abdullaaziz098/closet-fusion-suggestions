@@ -40,10 +40,9 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
       
       const result = await generateFashionImage(top.imageUrl, bottom.imageUrl);
       
-      if (result && (result.image_url || result.output)) {
-        const resultUrl = result.image_url || result.output;
-        console.log("Generated image URL:", resultUrl);
-        setImageUrl(resultUrl);
+      if (result && result.image_url) {
+        console.log("Generated image URL received");
+        setImageUrl(result.image_url);
         
         toast({
           title: "Preview generated",

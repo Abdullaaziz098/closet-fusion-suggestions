@@ -31,16 +31,23 @@ export const generateFashionImage = async (topImageUrl: string, bottomImageUrl: 
 
     console.log("Sending request to Segmind API:", data);
 
-    // Make API request
+    // Make API request with responseType: 'blob' to handle binary responses
     const response = await axios.post(URL, data, {
       headers: { 
         'x-api-key': API_KEY,
         'Content-Type': 'application/json'
-      }
+      },
+      responseType: 'arraybuffer' // Handle binary response
     });
 
-    console.log("Segmind API response:", response.data);
-    return response.data;
+    console.log("Segmind API response received");
+    
+    // Convert the binary response to a base64 URL
+    const base64 = Buffer.from(response.data, 'binary').toString('base64');
+    const contentType = response.headers['content-type'];
+    const imageUrl = `data:${contentType};base64,${base64}`;
+    
+    return { image_url: imageUrl };
   } catch (error: any) {
     console.error('Segmind API Error:', error.response ? error.response.data : error.message);
     throw new Error('Failed to generate fashion image');
