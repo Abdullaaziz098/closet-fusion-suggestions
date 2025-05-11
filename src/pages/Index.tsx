@@ -65,7 +65,7 @@ const Index = () => {
     transition: {
       duration: 4,
       repeat: Infinity,
-      repeatType: "reverse",
+      repeatType: "reverse" as const, // Fixed: Using type assertion
       ease: "easeInOut"
     }
   };
@@ -221,7 +221,7 @@ const Index = () => {
                 transition={{ 
                   duration: 2,
                   repeat: Infinity,
-                  repeatType: "loop"
+                  repeatType: "loop" as const
                 }}
               >
                 <div className="border-2 border-primary/20 rounded-full w-8 h-14 flex items-center justify-center">
@@ -231,7 +231,7 @@ const Index = () => {
                     transition={{ 
                       duration: 2,
                       repeat: Infinity,
-                      repeatType: "loop"
+                      repeatType: "loop" as const
                     }}
                   />
                 </div>
@@ -250,7 +250,7 @@ const Index = () => {
                   <motion.div 
                     className="absolute -right-12 -top-12 w-32 h-32 bg-accent/20 rounded-full blur-xl"
                     animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 5, repeat: Infinity }}
+                    transition={{ duration: 5, repeat: Infinity, repeatType: "reverse" as const }}
                   />
                   <div className="mb-4 p-2 inline-block rounded-full bg-accent/60">
                     <motion.div
@@ -285,7 +285,7 @@ const Index = () => {
                   <motion.div 
                     className="absolute -left-12 -bottom-12 w-32 h-32 bg-primary/10 rounded-full blur-xl"
                     animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 6, repeat: Infinity }}
+                    transition={{ duration: 6, repeat: Infinity, repeatType: "reverse" as const }}
                   />
                   <div className="mb-4 p-2 inline-block rounded-full bg-accent/60">
                     <motion.div
@@ -328,13 +328,13 @@ const Index = () => {
               <motion.div 
                 className="absolute -right-20 -top-20 w-40 h-40 bg-accent/30 rounded-full blur-xl"
                 animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 8, repeat: Infinity }}
+                transition={{ duration: 8, repeat: Infinity, repeatType: "reverse" as const }}
               />
               
               <motion.div 
                 className="absolute -left-20 -bottom-20 w-40 h-40 bg-primary/10 rounded-full blur-xl"
                 animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 7, repeat: Infinity, delay: 1 }}
+                transition={{ duration: 7, repeat: Infinity, repeatType: "reverse" as const, delay: 1 }}
               />
               
               <h2 className="text-2xl font-medium mb-8 text-center">How It Works</h2>
