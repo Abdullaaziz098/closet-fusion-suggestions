@@ -224,3 +224,37 @@
   animation: shine 3s infinite linear;
   pointer-events: none;
 }
+
+/* Parallax and additional homepage effects */
+.parallax-container {
+  position: relative;
+  background-image: radial-gradient(circle at 50% 50%, rgba(136, 240, 180, 0.05) 0%, transparent 50%);
+  background-size: 200% 200%;
+}
+
+/* Glass card effect */
+.glass-card {
+  backdrop-filter: blur(8px);
+  position: relative;
+  z-index: 0;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  padding: 1px;
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.1), 
+    rgba(255, 255, 255, 0.3), 
+    rgba(255, 255, 255, 0.1)
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
