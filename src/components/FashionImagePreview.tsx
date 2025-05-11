@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ClothingItem } from "@/types/clothing";
 import { generateFashionImage } from "@/services/segmindService";
+import { useToast } from "@/hooks/use-toast";
 
 interface FashionImagePreviewProps {
   top?: ClothingItem;
@@ -13,22 +14,54 @@ interface FashionImagePreviewProps {
 }
 
 const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProps) => {
+  const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const generateImage = async () => {
-    if (!top || !bottom) return;
+    if (!top || !bottom) {
+      toast({
+        title: "Missing items",
+        description: "Please select both a top and bottom item",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
     
     try {
+      console.log("Generating image with:", { 
+        top: top.imageUrl, 
+        bottom: bottom.imageUrl 
+      });
+      
       const result = await generateFashionImage(top.imageUrl, bottom.imageUrl);
-      setImageUrl(result.image_url || result.output);
+      
+      if (result && (result.image_url || result.output)) {
+        const resultUrl = result.image_url || result.output;
+        console.log("Generated image URL:", resultUrl);
+        setImageUrl(resultUrl);
+        
+        toast({
+          title: "Preview generated",
+          description: "Fashion preview has been successfully created",
+        });
+      } else {
+        console.error("Invalid API response:", result);
+        setError("The API returned an unexpected response. Please try again.");
+      }
     } catch (err) {
+      console.error("Fashion image generation error:", err);
       setError("Failed to generate fashion image. Please try again.");
-      console.error(err);
+      
+      toast({
+        title: "Generation failed",
+        description: "Could not generate fashion preview. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -39,16 +72,23 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
     generateImage();
   };
 
+  // Reset the preview when selected items change
+  useEffect(() => {
+    setImageUrl(null);
+    setError(null);
+  }, [top, bottom]);
+
   return (
     <div className="relative w-full h-full rounded-xl bg-gradient-to-tr from-muted/50 to-background/50 border overflow-hidden">
       {isLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <span className="ml-3 text-muted-foreground">Generating fashion preview...</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <span className="text-muted-foreground">Generating fashion preview...</span>
+          <p className="text-xs text-muted-foreground mt-2">This may take a few seconds</p>
         </div>
       ) : error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-          <p className="text-destructive mb-4">{error}</p>
+          <p className="text-destructive mb-4 text-center">{error}</p>
           <Button onClick={generateImage}>Try Again</Button>
         </div>
       ) : !imageUrl && (top || bottom) ? (
@@ -62,7 +102,7 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
             Generate Fashion Preview
           </Button>
           {(!top || !bottom) && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center px-6">
               Select both a top and bottom to generate a preview
             </p>
           )}
@@ -90,7 +130,7 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
         </motion.div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-center px-6">
             Select an outfit to generate a fashion preview
           </p>
         </div>
