@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Shirt, Home, LayoutGrid, Combine, User3D } from "lucide-react";
+import { Shirt, Home, LayoutGrid, Combine, User3 } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ const navItems = [
   { title: "Home", path: "/", icon: <Home className="w-5 h-5" /> },
   { title: "Closet", path: "/closet", icon: <Shirt className="w-5 h-5" /> },
   { title: "Suggestions", path: "/suggestions", icon: <Combine className="w-5 h-5" /> },
-  { title: "3D Preview", path: "/outfit-preview", icon: <User3D className="w-5 h-5" /> },
+  { title: "3D Preview", path: "/outfit-preview", icon: <User3 className="w-5 h-5" /> },
 ];
 
 const Layout = ({ children, hideNav = false }: LayoutProps) => {
