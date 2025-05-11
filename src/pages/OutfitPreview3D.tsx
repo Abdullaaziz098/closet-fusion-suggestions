@@ -1,7 +1,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, useGLTF, PresentationControls } from "@react-three/drei";
+import { OrbitControls, Environment, PresentationControls } from "@react-three/drei";
 import Layout from "@/components/Layout";
 import { Loader2, RotateCw, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
