@@ -8,6 +8,7 @@ import { AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import Closet from "./pages/Closet";
 import Suggestions from "./pages/Suggestions";
+import OutfitPreview3D from "./pages/OutfitPreview3D";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/closet" element={<Closet />} />
             <Route path="/suggestions" element={<Suggestions />} />
+            <Route path="/outfit-preview" element={<OutfitPreview3D />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AnimatePresence>
