@@ -1,7 +1,5 @@
 
-import { useState, useEffect, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, PresentationControls } from "@react-three/drei";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Loader2, RotateCw, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,70 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchClothingItems } from "@/services/clothingService";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { motion } from "framer-motion";
-
-// Basic 3D character model
-const Character = ({ outfit }: { outfit?: { top?: ClothingItem; bottom?: ClothingItem } }) => {
-  // In a real implementation, you would load a 3D model here
-  // For this test, we'll create a simple placeholder figure
-  return (
-    <group position={[0, -1, 0]}>
-      {/* Head */}
-      <mesh position={[0, 1.7, 0]}>
-        <sphereGeometry args={[0.25, 32, 32]} />
-        <meshStandardMaterial color="#e0ac69" />
-      </mesh>
-      
-      {/* Body */}
-      <mesh position={[0, 0.75, 0]}>
-        <capsuleGeometry args={[0.3, 1, 16, 16]} />
-        <meshStandardMaterial 
-          color={outfit?.top ? outfit.top.color : "#6e6e6e"} 
-          metalness={0.1} 
-          roughness={0.8} 
-        />
-      </mesh>
-      
-      {/* Bottom */}
-      <mesh position={[0, -0.1, 0]}>
-        <capsuleGeometry args={[0.32, 0.8, 16, 16]} />
-        <meshStandardMaterial 
-          color={outfit?.bottom ? outfit.bottom.color : "#3f3f3f"} 
-          metalness={0.1} 
-          roughness={0.8} 
-        />
-      </mesh>
-      
-      {/* Arms */}
-      <mesh position={[0.5, 0.75, 0]}>
-        <capsuleGeometry args={[0.12, 0.8, 16, 16]} />
-        <meshStandardMaterial color={outfit?.top ? outfit.top.color : "#6e6e6e"} />
-      </mesh>
-      <mesh position={[-0.5, 0.75, 0]}>
-        <capsuleGeometry args={[0.12, 0.8, 16, 16]} />
-        <meshStandardMaterial color={outfit?.top ? outfit.top.color : "#6e6e6e"} />
-      </mesh>
-      
-      {/* Legs */}
-      <mesh position={[0.2, -0.6, 0]}>
-        <capsuleGeometry args={[0.12, 0.8, 16, 16]} />
-        <meshStandardMaterial color={outfit?.bottom ? outfit.bottom.color : "#3f3f3f"} />
-      </mesh>
-      <mesh position={[-0.2, -0.6, 0]}>
-        <capsuleGeometry args={[0.12, 0.8, 16, 16]} />
-        <meshStandardMaterial color={outfit?.bottom ? outfit.bottom.color : "#3f3f3f"} />
-      </mesh>
-
-      {/* Add text label if we have outfit pieces */}
-      {(outfit?.top || outfit?.bottom) && (
-        <group position={[0, 2.2, 0]}>
-          <mesh>
-            {/* This is where we would add a sprite with text in a full implementation */}
-          </mesh>
-        </group>
-      )}
-    </group>
-  );
-};
+import FashionImagePreview from "@/components/FashionImagePreview";
 
 const OutfitPreview3D = () => {
   const { toast } = useToast();
@@ -206,36 +141,19 @@ const OutfitPreview3D = () => {
           transition={{ duration: 0.4 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold mb-2">3D Outfit Preview</h1>
+          <h1 className="text-3xl font-bold mb-2">Fashion Preview</h1>
           <p className="text-muted-foreground">
-            Test feature: See your outfit suggestions on a 3D character
+            See your outfit suggestions on a virtual fashion model
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 h-[60vh] rounded-xl bg-gradient-to-tr from-muted/50 to-background/50 border overflow-hidden shadow-md">
-            <Canvas shadows camera={{ position: [0, 0, 5], fov: 45 }}>
-              <Suspense fallback={null}>
-                <ambientLight intensity={0.5} />
-                <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-                <PresentationControls
-                  global
-                  zoom={0.8}
-                  rotation={[0, -Math.PI / 4, 0]}
-                  polar={[-Math.PI / 4, Math.PI / 4]}
-                  azimuth={[-Math.PI / 4, Math.PI / 4]}
-                >
-                  <Character outfit={currentOutfit} />
-                </PresentationControls>
-                <Environment preset="city" />
-                <OrbitControls 
-                  enableZoom={true}
-                  enablePan={false}
-                  minPolarAngle={0}
-                  maxPolarAngle={Math.PI / 2}
-                />
-              </Suspense>
-            </Canvas>
+            <FashionImagePreview 
+              top={currentOutfit.top} 
+              bottom={currentOutfit.bottom}
+              onRefresh={nextOutfit}
+            />
           </div>
 
           <div className="lg:col-span-2">
@@ -290,7 +208,7 @@ const OutfitPreview3D = () => {
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  No outfit selected. Generate suggestions to see outfits on the 3D model.
+                  No outfit selected. Generate suggestions to see outfits on the fashion model.
                 </p>
               )}
             </motion.div>
@@ -333,8 +251,8 @@ const OutfitPreview3D = () => {
             <div className="mt-6 bg-muted/50 rounded-lg border p-4">
               <h3 className="font-medium mb-2 text-sm">About This Feature</h3>
               <p className="text-sm text-muted-foreground">
-                This is an experimental feature that lets you visualize outfit suggestions on a 3D character.
-                Currently using a simple 3D model with colors from your clothing items.
+                This feature uses AI to visualize your outfit combinations on a virtual fashion model.
+                Select or generate outfit combinations to see how they might look when worn together.
               </p>
             </div>
           </div>
