@@ -62,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				ios: {
+					background: '#000000',
+					card: '#121212',
+					accent: '#0A84FF',
+					text: '#FFFFFF',
+					textSecondary: '#8A898C',
+					border: '#222222'
 				}
 			},
 			borderRadius: {
@@ -70,7 +78,12 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				sans: ['Inter', 'sans-serif'],
+				sans: ['-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+			},
+			boxShadow: {
+				'ios': '0 4px 16px rgba(0,0,0,0.12)',
+				'ios-sm': '0 2px 8px rgba(0,0,0,0.12)',
+				'ios-lg': '0 8px 24px rgba(0,0,0,0.16)',
 			},
 			keyframes: {
 				'accordion-down': {
