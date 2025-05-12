@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -64,12 +63,12 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				ios: {
-					background: '#000000',
-					card: '#121212',
-					accent: '#0A84FF',
-					text: '#FFFFFF',
-					textSecondary: '#8A898C',
-					border: '#222222'
+					background: '#FFFFFF',
+					card: '#F2F2F7',
+					accent: '#007AFF',
+					text: '#000000',
+					textSecondary: '#6E6E73',
+					border: '#E5E5EA'
 				}
 			},
 			borderRadius: {
@@ -81,9 +80,9 @@ export default {
 				sans: ['-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
 			},
 			boxShadow: {
-				'ios': '0 4px 16px rgba(0,0,0,0.12)',
-				'ios-sm': '0 2px 8px rgba(0,0,0,0.12)',
-				'ios-lg': '0 8px 24px rgba(0,0,0,0.16)',
+				'ios': '0 4px 16px rgba(0,0,0,0.08)',
+				'ios-sm': '0 2px 8px rgba(0,0,0,0.06)',
+				'ios-lg': '0 8px 24px rgba(0,0,0,0.12)',
 			},
 			keyframes: {
 				'accordion-down': {

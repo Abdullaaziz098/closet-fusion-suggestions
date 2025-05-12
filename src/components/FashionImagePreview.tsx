@@ -78,17 +78,17 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
   }, [top, bottom]);
 
   return (
-    <div className="relative w-full h-full rounded-xl bg-ios-card border border-ios-border/20 overflow-hidden shadow-ios">
+    <div className="relative w-full h-full rounded-xl bg-ios-card border border-ios-border/10 overflow-hidden shadow-ios">
       {isLoading ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-ios-accent mb-4" />
-          <span className="text-white/80">Generating fashion preview...</span>
+          <span className="text-ios-text">Generating fashion preview...</span>
           <p className="text-xs text-ios-textSecondary mt-2">This may take a few seconds</p>
         </div>
       ) : error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
           <p className="text-destructive mb-4 text-center">{error}</p>
-          <Button onClick={generateImage} variant="secondary" className="bg-ios-card border border-ios-border/50 hover:bg-ios-border/20">
+          <Button onClick={generateImage} variant="secondary">
             Try Again
           </Button>
         </div>
@@ -97,7 +97,7 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
           <Button 
             onClick={generateImage} 
             size="lg" 
-            className="mb-4 bg-ios-accent hover:bg-ios-accent/90 text-white rounded-full px-6 shadow-ios-sm"
+            className="mb-4"
             disabled={!top || !bottom}
           >
             <Camera className="mr-2 h-5 w-5" />
@@ -123,7 +123,8 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
           <Button 
             onClick={handleRefresh}
             size="sm" 
-            className="absolute bottom-4 right-4 bg-ios-card/70 backdrop-blur-lg border border-white/10 rounded-full shadow-ios px-4"
+            variant="secondary"
+            className="absolute bottom-4 right-4 rounded-full shadow-ios"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh

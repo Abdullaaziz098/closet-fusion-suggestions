@@ -10,13 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-ios-accent text-white hover:bg-ios-accent/90 shadow-ios-sm",
+        default: "bg-black text-white hover:bg-black/90 shadow-ios-sm",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-ios-border/50 bg-ios-card hover:bg-ios-border/20 text-ios-text",
+          "border border-ios-border bg-ios-background hover:bg-ios-border/10 text-ios-text",
         secondary:
-          "bg-secondary text-ios-text hover:bg-secondary/80",
+          "bg-ios-card text-ios-text hover:bg-ios-border/20 shadow-ios-sm",
         ghost: "hover:bg-ios-border/10 text-ios-text hover:text-ios-accent",
         link: "text-ios-accent underline-offset-4 hover:underline p-0 h-auto",
       },

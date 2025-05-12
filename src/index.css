@@ -6,23 +6,23 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 100%;
+    --card: 240 24% 96%;
+    --card-foreground: 0 0% 0%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
 
     --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 240 10% 96%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 240 10% 95%;
+    --muted-foreground: 0 0% 45%;
 
     --accent: 211 100% 50%;
     --accent-foreground: 0 0% 100%;
@@ -30,19 +30,19 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 13%;
-    --input: 0 0% 13%;
+    --border: 240 10% 90%;
+    --input: 240 10% 90%;
     --ring: 211 100% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 100%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
     --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 9%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 13%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 90%;
     --sidebar-ring: 211 100% 50%;
   }
 }
@@ -53,26 +53,26 @@
   }
 
   body {
-    @apply bg-black text-white font-sans;
+    @apply bg-white text-black font-sans;
     scroll-behavior: smooth;
   }
 }
 
 /* iOS-inspired components */
 .ios-card {
-  @apply bg-ios-card rounded-xl shadow-ios border border-ios-border/10 backdrop-blur-sm;
+  @apply bg-ios-card rounded-xl shadow-ios border border-ios-border/10;
 }
 
 .ios-button {
-  @apply rounded-full px-5 py-2.5 font-semibold transition-all active:scale-95;
+  @apply rounded-full px-5 py-2.5 font-semibold transition-all active:scale-95 bg-black text-white;
 }
 
 .ios-input {
-  @apply bg-ios-card border border-ios-border/30 rounded-lg px-4 py-3 text-white focus:border-ios-accent outline-none;
+  @apply bg-ios-card border border-ios-border/30 rounded-lg px-4 py-3 text-black focus:border-ios-accent outline-none;
 }
 
 .ios-nav {
-  @apply fixed bottom-0 w-full bg-ios-card/80 backdrop-blur-lg border-t border-ios-border/30 h-16;
+  @apply fixed bottom-0 w-full bg-ios-card/90 backdrop-blur-lg border-t border-ios-border h-16;
 }
 
 .ios-tab {
@@ -84,11 +84,11 @@
 }
 
 .ios-blur-bg {
-  @apply backdrop-blur-xl bg-ios-card/80;
+  @apply backdrop-blur-xl bg-white/80;
 }
 
 .ios-top-bar {
-  @apply fixed top-0 w-full h-14 bg-ios-background/80 backdrop-blur-xl border-b border-ios-border/20 z-50 flex items-center px-4;
+  @apply fixed top-0 w-full h-14 bg-ios-background/80 backdrop-blur-xl border-b border-ios-border/30 z-50 flex items-center px-4;
 }
 
 /* Enhanced animation classes */

@@ -22,7 +22,7 @@ const Layout = ({ children, hideNav = false }: LayoutProps) => {
       {!hideNav && (
         <header className="ios-top-bar">
           <Link to="/" className="flex items-center gap-2">
-            <span className="font-semibold text-white">Closet Fusion</span>
+            <span className="font-semibold text-black">Closet Fusion</span>
           </Link>
         </header>
       )}
