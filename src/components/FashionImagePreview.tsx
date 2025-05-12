@@ -50,7 +50,7 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
         });
       } else {
         console.error("Invalid API response:", result);
-        setError("The AI could not generate a preview at this time. Please try different outfit or try again later.");
+        setError("The AI could not generate a preview at this time. Please try a different outfit or try again later.");
         
         toast({
           title: "Generation issue",

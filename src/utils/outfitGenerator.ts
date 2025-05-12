@@ -13,6 +13,7 @@ export async function generateOutfitSuggestions(
 ): Promise<OutfitSuggestion[]> {
   const suggestions: OutfitSuggestion[] = [];
   const suggestedPairs = new Set(); // Track pairs to avoid duplicates
+  const consistencyCache = new Map(); // Cache for scoring consistency
 
   if (!tops.length || !bottoms.length) {
     return suggestions;
@@ -42,6 +43,13 @@ export async function generateOutfitSuggestions(
       
       // Skip if we've already created a suggestion for this pair
       if (suggestedPairs.has(pairKey)) {
+        continue;
+      }
+      
+      // Check if we already have a cached score for this exact pair (for consistency)
+      if (consistencyCache.has(pairKey)) {
+        const cachedSuggestion = consistencyCache.get(pairKey);
+        suggestions.push({...cachedSuggestion, id: uuidv4()}); // New ID but same score/reason
         continue;
       }
       
@@ -101,6 +109,16 @@ export async function generateOutfitSuggestions(
           score: Math.min(Math.max(finalScore, 0), 1), // Ensure score is between 0 and 1
           matchReason: matchReason || "These items create an interesting combination.",
         };
+        
+        // Cache this score and reason for this specific pair
+        // This ensures if we see this exact pair again (e.g., different session), 
+        // it will get the same score and reason for consistency
+        consistencyCache.set(pairKey, {
+          topId: suggestion.topId,
+          bottomId: suggestion.bottomId,
+          score: suggestion.score,
+          matchReason: suggestion.matchReason
+        });
         
         suggestions.push(suggestion);
         
