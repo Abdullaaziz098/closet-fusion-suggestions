@@ -9,6 +9,8 @@ import { fetchClothingItems } from "@/services/clothingService";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { motion } from "framer-motion";
 import FashionImagePreview from "@/components/FashionImagePreview";
+import OutfitCard from "@/components/OutfitCard";
+import { Card, CardContent } from "@/components/ui/card";
 
 const OutfitPreview3D = () => {
   const { toast } = useToast();
@@ -19,6 +21,7 @@ const OutfitPreview3D = () => {
   const [currentOutfit, setCurrentOutfit] = useState<{ top?: ClothingItem; bottom?: ClothingItem }>({});
   const [generating, setGenerating] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const [showSuggestionsSelector, setShowSuggestionsSelector] = useState(false);
   
   useEffect(() => {
     const loadItems = async () => {
@@ -76,15 +79,8 @@ const OutfitPreview3D = () => {
       const outfitSuggestions = await generateOutfitSuggestions(tops, bottoms);
       setSuggestions(outfitSuggestions);
       
-      if (outfitSuggestions.length > 0) {
-        // Set the first suggestion
-        const firstSuggestion = outfitSuggestions[0];
-        const top = tops.find(item => item.id === firstSuggestion.topId);
-        const bottom = bottoms.find(item => item.id === firstSuggestion.bottomId);
-        
-        setCurrentOutfit({ top, bottom });
-        setCurrentSuggestionIndex(0);
-      }
+      // Show the suggestions selector instead of automatically setting the first suggestion
+      setShowSuggestionsSelector(true);
 
       toast({
         title: "Suggestions generated",
@@ -102,6 +98,18 @@ const OutfitPreview3D = () => {
     }
   };
 
+  const selectOutfit = (suggestionIndex: number) => {
+    if (suggestions.length === 0) return;
+    
+    const selectedSuggestion = suggestions[suggestionIndex];
+    const top = tops.find(item => item.id === selectedSuggestion.topId);
+    const bottom = bottoms.find(item => item.id === selectedSuggestion.bottomId);
+    
+    setCurrentOutfit({ top, bottom });
+    setCurrentSuggestionIndex(suggestionIndex);
+    setShowSuggestionsSelector(false);
+  };
+
   const nextOutfit = () => {
     if (suggestions.length === 0) return;
     
@@ -113,6 +121,20 @@ const OutfitPreview3D = () => {
     
     setCurrentOutfit({ top, bottom });
     setCurrentSuggestionIndex(nextIndex);
+  };
+
+  const findClothingItem = (id: string): ClothingItem | undefined => {
+    return [...tops, ...bottoms].find(item => item.id === id);
+  };
+
+  const handleOpenOutfitSelector = () => {
+    if (suggestions.length === 0) {
+      // If no suggestions exist, generate them
+      generateSuggestions();
+    } else {
+      // If suggestions already exist, just show the selector
+      setShowSuggestionsSelector(true);
+    }
   };
 
   if (loading) {
@@ -149,11 +171,69 @@ const OutfitPreview3D = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-3 h-[60vh] rounded-xl bg-gradient-to-tr from-muted/50 to-background/50 border overflow-hidden shadow-md">
-            <FashionImagePreview 
-              top={currentOutfit.top} 
-              bottom={currentOutfit.bottom}
-              onRefresh={nextOutfit}
-            />
+            {showSuggestionsSelector ? (
+              <div className="h-full overflow-y-auto p-4">
+                <h2 className="text-xl font-semibold mb-4">Select an Outfit</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
+                  {suggestions.map((suggestion, index) => {
+                    const top = findClothingItem(suggestion.topId);
+                    const bottom = findClothingItem(suggestion.bottomId);
+                    
+                    if (!top || !bottom) return null;
+                    
+                    return (
+                      <Card 
+                        key={suggestion.id}
+                        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow border-2"
+                        onClick={() => selectOutfit(index)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex gap-2 items-center">
+                            <div className="flex-shrink-0 w-16 h-16 bg-muted rounded-md overflow-hidden">
+                              <img 
+                                src={top.imageUrl} 
+                                alt={top.name || "Top"} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-shrink-0 w-16 h-16 bg-muted rounded-md overflow-hidden">
+                              <img 
+                                src={bottom.imageUrl} 
+                                alt={bottom.name || "Bottom"} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="ml-2">
+                              <div className="flex items-center">
+                                <span className="text-sm font-medium">Match Score: </span>
+                                <span className="ml-1 text-sm font-semibold">
+                                  {Math.round(suggestion.score * 100)}%
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {suggestion.matchReason}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+                {suggestions.length === 0 && generating && (
+                  <div className="flex flex-col items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                    <p>Generating outfit suggestions...</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <FashionImagePreview 
+                top={currentOutfit.top} 
+                bottom={currentOutfit.bottom}
+                onRefresh={nextOutfit}
+              />
+            )}
           </div>
 
           <div className="lg:col-span-2">
@@ -182,7 +262,7 @@ const OutfitPreview3D = () => {
                       </p>
                     </div>
                   )}
-                  {suggestions.length > 0 && (
+                  {suggestions.length > 0 && currentOutfit.top && currentOutfit.bottom && (
                     <div className="pt-2">
                       <p className="text-sm font-medium">Match Score</p>
                       <div className="flex items-center gap-2">
@@ -198,7 +278,7 @@ const OutfitPreview3D = () => {
                       </div>
                     </div>
                   )}
-                  {suggestions.length > 0 && (
+                  {suggestions.length > 0 && currentOutfit.top && currentOutfit.bottom && (
                     <div className="pt-1">
                       <p className="text-sm text-muted-foreground italic">
                         "{suggestions[currentSuggestionIndex].matchReason}"
@@ -219,40 +299,56 @@ const OutfitPreview3D = () => {
               transition={{ duration: 0.4, delay: 0.3 }}
               className="flex flex-col gap-3"
             >
-              <Button 
-                onClick={generateSuggestions} 
-                disabled={generating || tops.length === 0 || bottoms.length === 0}
-                className="w-full"
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Generate Outfit Suggestions
-                  </>
-                )}
-              </Button>
-              
-              <Button 
-                onClick={nextOutfit} 
-                variant="secondary" 
-                disabled={suggestions.length === 0}
-                className="w-full"
-              >
-                <RotateCw className="mr-2 h-4 w-4" />
-                Next Outfit
-              </Button>
+              {!showSuggestionsSelector ? (
+                <>
+                  <Button 
+                    onClick={handleOpenOutfitSelector}
+                    className="w-full"
+                  >
+                    {suggestions.length > 0 ? (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Choose Different Outfit
+                      </>
+                    ) : generating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Generate Outfit Suggestions
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    onClick={nextOutfit} 
+                    variant="secondary" 
+                    disabled={suggestions.length === 0}
+                    className="w-full"
+                  >
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    Next Outfit
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setShowSuggestionsSelector(false)}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Back to Fashion Preview
+                </Button>
+              )}
             </motion.div>
 
             <div className="mt-6 bg-muted/50 rounded-lg border p-4">
               <h3 className="font-medium mb-2 text-sm">About This Feature</h3>
               <p className="text-sm text-muted-foreground">
                 This feature uses AI to visualize your outfit combinations on a virtual fashion model.
-                Select or generate outfit combinations to see how they might look when worn together.
+                Select from your suggested outfits to see how they might look when worn together.
               </p>
             </div>
           </div>

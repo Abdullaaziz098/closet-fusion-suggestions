@@ -50,15 +50,21 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
         });
       } else {
         console.error("Invalid API response:", result);
-        setError("The API returned an unexpected response. Please try again.");
+        setError("The AI could not generate a preview at this time. Please try different outfit or try again later.");
+        
+        toast({
+          title: "Generation issue",
+          description: "Could not generate the preview. Try a different outfit combination.",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error("Fashion image generation error:", err);
-      setError("Failed to generate fashion image. Please try again.");
+      setError("The AI fashion preview feature is currently unavailable. Please try different outfits or try again later.");
       
       toast({
         title: "Generation failed",
-        description: "Could not generate fashion preview. Please try again.",
+        description: "AI fashion preview is temporarily unavailable. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -88,9 +94,16 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
       ) : error ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
           <p className="text-destructive mb-4 text-center">{error}</p>
-          <Button onClick={generateImage} variant="secondary">
-            Try Again
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={generateImage} variant="secondary">
+              Try Again
+            </Button>
+            {onRefresh && (
+              <Button onClick={onRefresh} variant="outline">
+                Change Outfit
+              </Button>
+            )}
+          </div>
         </div>
       ) : !imageUrl && (top || bottom) ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
