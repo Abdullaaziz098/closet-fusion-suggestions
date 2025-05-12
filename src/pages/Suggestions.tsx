@@ -12,6 +12,7 @@ import { fetchClothingItems } from "@/services/clothingService";
 import { testGeminiConnection } from "@/utils/geminiService";
 import { Badge } from "@/components/ui/badge";
 import { removeBackground } from "@/utils/backgroundRemoval";
+import { useSuggestions } from "@/contexts/SuggestionsContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +26,18 @@ import WeeklyOutfitSuggestion from "@/components/WeeklyOutfitSuggestion";
 
 const Suggestions = () => {
   const { toast } = useToast();
+  const { 
+    suggestions: savedSuggestions, 
+    setSuggestions: setSavedSuggestions,
+    clothingItems: savedClothingItems,
+    setClothingItems: setSavedClothingItems
+  } = useSuggestions();
+  
   const [tops, setTops] = useState<ClothingItem[]>([]);
   const [bottoms, setBottoms] = useState<ClothingItem[]>([]);
   const [processedTops, setProcessedTops] = useState<ClothingItem[]>([]);
   const [processedBottoms, setProcessedBottoms] = useState<ClothingItem[]>([]);
-  const [suggestions, setSuggestions] = useState<OutfitSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<OutfitSuggestion[]>(savedSuggestions);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -57,7 +65,7 @@ const Suggestions = () => {
     "Finding the perfect outfit pairings...",
     "Creating personalized style recommendations...",
   ];
-
+  
   // Message rotation effect
   useEffect(() => {
     let interval: number | undefined;
@@ -113,6 +121,9 @@ const Suggestions = () => {
         // No longer automatically generating suggestions
         setProcessedTops(fetchedTops.map(top => ({ ...top })));
         setProcessedBottoms(fetchedBottoms.map(bottom => ({ ...bottom })));
+        
+        // Combine tops and bottoms for the shared context
+        setSavedClothingItems([...fetchedTops, ...fetchedBottoms]);
       } catch (error) {
         console.error("Failed to load clothing items:", error);
         
@@ -148,7 +159,7 @@ const Suggestions = () => {
     };
 
     loadItems();
-  }, []);
+  }, [setSavedClothingItems]);
 
   const processBackgrounds = async () => {
     if (tops.length === 0 || bottoms.length === 0) {
@@ -218,6 +229,9 @@ const Suggestions = () => {
       console.log("Generating outfit suggestions with Gemini status:", geminiStatus);
       const outfitSuggestions = await generateOutfitSuggestions(processedTops, processedBottoms);
       setSuggestions(outfitSuggestions);
+      
+      // Store in the shared context
+      setSavedSuggestions(outfitSuggestions);
 
       toast({
         title: "Suggestions updated",

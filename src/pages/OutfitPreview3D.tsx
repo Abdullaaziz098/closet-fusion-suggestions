@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Loader2, RotateCw, Wand2 } from "lucide-react";
@@ -9,11 +8,18 @@ import { fetchClothingItems } from "@/services/clothingService";
 import { generateOutfitSuggestions } from "@/utils/outfitGenerator";
 import { motion } from "framer-motion";
 import FashionImagePreview from "@/components/FashionImagePreview";
-import OutfitCard from "@/components/OutfitCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSuggestions } from "@/contexts/SuggestionsContext";
 
 const OutfitPreview3D = () => {
   const { toast } = useToast();
+  const { 
+    suggestions: savedSuggestions, 
+    clothingItems,
+    setClothingItems,
+    findClothingItem: contextFindClothingItem
+  } = useSuggestions();
+  
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<OutfitSuggestion[]>([]);
   const [tops, setTops] = useState<ClothingItem[]>([]);
@@ -23,15 +29,45 @@ const OutfitPreview3D = () => {
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [showSuggestionsSelector, setShowSuggestionsSelector] = useState(false);
   
+  // Use savedSuggestions from context if available
+  useEffect(() => {
+    if (savedSuggestions && savedSuggestions.length > 0) {
+      setSuggestions(savedSuggestions);
+      console.log("Using saved suggestions from context:", savedSuggestions.length);
+    }
+  }, [savedSuggestions]);
+  
   useEffect(() => {
     const loadItems = async () => {
       setLoading(true);
       try {
+        // If we already have clothing items in context, use those
+        if (clothingItems && clothingItems.length > 0) {
+          const contextTops = clothingItems.filter(item => item.type === 'top');
+          const contextBottoms = clothingItems.filter(item => item.type === 'bottom');
+          
+          setTops(contextTops);
+          setBottoms(contextBottoms);
+          setLoading(false);
+          
+          // If we have suggestions but no current outfit, set the first suggestion
+          if (savedSuggestions && savedSuggestions.length > 0 && !currentOutfit.top) {
+            setTimeout(() => {
+              handleOpenOutfitSelector();
+            }, 500);
+          }
+          
+          return;
+        }
+
         const fetchedTops = await fetchClothingItems('top');
         const fetchedBottoms = await fetchClothingItems('bottom');
         
         setTops(fetchedTops);
         setBottoms(fetchedBottoms);
+        
+        // Save to context
+        setClothingItems([...fetchedTops, ...fetchedBottoms]);
       } catch (error) {
         console.error("Failed to load clothing items:", error);
         
@@ -62,7 +98,7 @@ const OutfitPreview3D = () => {
     };
 
     loadItems();
-  }, []);
+  }, [clothingItems, savedSuggestions, setClothingItems]);
 
   const generateSuggestions = async () => {
     if (tops.length === 0 || bottoms.length === 0) {
@@ -102,8 +138,8 @@ const OutfitPreview3D = () => {
     if (suggestions.length === 0) return;
     
     const selectedSuggestion = suggestions[suggestionIndex];
-    const top = tops.find(item => item.id === selectedSuggestion.topId);
-    const bottom = bottoms.find(item => item.id === selectedSuggestion.bottomId);
+    const top = findClothingItem(selectedSuggestion.topId);
+    const bottom = findClothingItem(selectedSuggestion.bottomId);
     
     setCurrentOutfit({ top, bottom });
     setCurrentSuggestionIndex(suggestionIndex);
@@ -116,23 +152,32 @@ const OutfitPreview3D = () => {
     const nextIndex = (currentSuggestionIndex + 1) % suggestions.length;
     const nextSuggestion = suggestions[nextIndex];
     
-    const top = tops.find(item => item.id === nextSuggestion.topId);
-    const bottom = bottoms.find(item => item.id === nextSuggestion.bottomId);
+    const top = findClothingItem(nextSuggestion.topId);
+    const bottom = findClothingItem(nextSuggestion.bottomId);
     
     setCurrentOutfit({ top, bottom });
     setCurrentSuggestionIndex(nextIndex);
   };
 
   const findClothingItem = (id: string): ClothingItem | undefined => {
+    // First try from the context
+    const contextItem = contextFindClothingItem(id);
+    if (contextItem) return contextItem;
+    
+    // Then try from local state
     return [...tops, ...bottoms].find(item => item.id === id);
   };
 
   const handleOpenOutfitSelector = () => {
-    if (suggestions.length === 0) {
-      // If no suggestions exist, generate them
+    if (suggestions.length === 0 && savedSuggestions.length > 0) {
+      // If we have suggestions from context but not locally, use those
+      setSuggestions(savedSuggestions);
+      setShowSuggestionsSelector(true);
+    } else if (suggestions.length === 0) {
+      // If no suggestions exist anywhere, generate them
       generateSuggestions();
     } else {
-      // If suggestions already exist, just show the selector
+      // If suggestions already exist locally, just show the selector
       setShowSuggestionsSelector(true);
     }
   };
@@ -224,6 +269,15 @@ const OutfitPreview3D = () => {
                   <div className="flex flex-col items-center justify-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                     <p>Generating outfit suggestions...</p>
+                  </div>
+                )}
+                {suggestions.length === 0 && !generating && savedSuggestions.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-64">
+                    <p className="text-muted-foreground mb-4">No outfit suggestions available</p>
+                    <Button onClick={generateSuggestions}>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      Generate Suggestions
+                    </Button>
                   </div>
                 )}
               </div>

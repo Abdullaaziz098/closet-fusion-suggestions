@@ -79,8 +79,11 @@ const FashionImagePreview = ({ top, bottom, onRefresh }: FashionImagePreviewProp
 
   // Reset the preview when selected items change
   useEffect(() => {
-    setImageUrl(null);
-    setError(null);
+    // Only reset if one of the items changes
+    if (top || bottom) {
+      setImageUrl(null);
+      setError(null);
+    }
   }, [top, bottom]);
 
   return (
